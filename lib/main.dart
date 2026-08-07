@@ -50,9 +50,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     Future.microtask(() {
       if (mounted) {
         context.read<AuthProvider>().checkAuthStatus();
+        context.read<CartProvider>().loadCart();
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {

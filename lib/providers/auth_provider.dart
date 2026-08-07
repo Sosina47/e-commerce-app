@@ -86,7 +86,9 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_keyToken);
       await prefs.remove(_keyUsername);
+      await prefs.remove('shopping_cart');
     } catch (_) {}
+
 
     _token = null;
     _username = null;

@@ -1,8 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecommerce_app/models/product.dart';
 import 'package:ecommerce_app/providers/cart_provider.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   const sampleProduct1 = Product(
     id: 1,
     title: 'Fjallraven Backpack',
@@ -77,6 +82,34 @@ void main() {
       expect(cart.cartItems.length, 1);
       expect(cart.cartItems.first.product.id, sampleProduct2.id);
       expect(cart.calculateTotal(), 50.0);
+    });
+
+    test('saveCart and loadCart persist cart state across app restarts', () async {
+      final cart1 = CartProvider();
+      cart1.addToCart(sampleProduct1);
+      cart1.addToCart(sampleProduct1); // quantity 2
+      cart1.addToCart(sampleProduct2); // quantity 1
+
+      await cart1.saveCart();
+
+      final cart2 = CartProvider();
+      await cart2.loadCart();
+
+      expect(cart2.cartItems.length, 2);
+      expect(cart2.itemCount, 3);
+      expect(cart2.calculateTotal(), 250.0);
+    });
+
+    test('clearSavedCart removes cart from SharedPreferences and resets memory state', () async {
+      final cart = CartProvider();
+      cart.addToCart(sampleProduct1);
+      await cart.clearSavedCart();
+
+      expect(cart.items, isEmpty);
+
+      final reloadedCart = CartProvider();
+      await reloadedCart.loadCart();
+      expect(reloadedCart.items, isEmpty);
     });
   });
 }

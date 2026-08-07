@@ -7,11 +7,15 @@ class Rating {
     required this.count,
   });
 
-  factory Rating.fromJson(Map<String, dynamic> json) {
-    return Rating(
-      rate: (json['rate'] as num?)?.toDouble() ?? 0.0,
-      count: (json['count'] as num?)?.toInt() ?? 0,
-    );
+  factory Rating.fromJson(dynamic json) {
+    if (json is Map) {
+      final map = Map<String, dynamic>.from(json);
+      return Rating(
+        rate: (map['rate'] as num?)?.toDouble() ?? 0.0,
+        count: (map['count'] as num?)?.toInt() ?? 0,
+      );
+    }
+    return const Rating(rate: 0.0, count: 0);
   }
 
   Map<String, dynamic> toJson() {
@@ -41,17 +45,27 @@ class Product {
     required this.rating,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      title: json['title'] as String? ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      description: json['description'] as String? ?? '',
-      category: json['category'] as String? ?? '',
-      image: json['image'] as String? ?? '',
-      rating: json['rating'] != null && json['rating'] is Map<String, dynamic>
-          ? Rating.fromJson(json['rating'] as Map<String, dynamic>)
-          : const Rating(rate: 0.0, count: 0),
+  factory Product.fromJson(dynamic json) {
+    if (json is Map) {
+      final map = Map<String, dynamic>.from(json);
+      return Product(
+        id: (map['id'] as num?)?.toInt() ?? 0,
+        title: map['title'] as String? ?? '',
+        price: (map['price'] as num?)?.toDouble() ?? 0.0,
+        description: map['description'] as String? ?? '',
+        category: map['category'] as String? ?? '',
+        image: map['image'] as String? ?? '',
+        rating: map['rating'] != null ? Rating.fromJson(map['rating']) : const Rating(rate: 0.0, count: 0),
+      );
+    }
+    return const Product(
+      id: 0,
+      title: '',
+      price: 0.0,
+      description: '',
+      category: '',
+      image: '',
+      rating: Rating(rate: 0.0, count: 0),
     );
   }
 
