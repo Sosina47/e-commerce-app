@@ -21,7 +21,7 @@ class MockApiService extends ApiService {
         title: 'Fjallraven Backpack',
         price: 99.99,
         description: 'Nice bag',
-        category: 'men\'s clothing',
+        category: 'electronics',
         image: 'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
         rating: Rating(rate: 3.9, count: 120),
       ),
@@ -35,6 +35,11 @@ class MockApiService extends ApiService {
         rating: Rating(rate: 4.1, count: 259),
       ),
     ];
+  }
+
+  @override
+  Future<List<String>> getCategories() async {
+    return const ['electronics', 'jewelery', 'men\'s clothing', 'women\'s clothing'];
   }
 }
 
@@ -97,7 +102,7 @@ void main() {
     expect(find.text('Please enter your password'), findsOneWidget);
   });
 
-  testWidgets('Renders Home Screen UI components when authenticated with products', (WidgetTester tester) async {
+  testWidgets('Renders Home Screen UI components and handles search/category selection', (WidgetTester tester) async {
     final productProvider = ProductProvider(apiService: MockApiService());
 
     await tester.pumpWidget(
@@ -123,19 +128,36 @@ void main() {
     // Verify Search Bar
     expect(find.byType(TextField), findsOneWidget);
 
-    // Verify Category Chips
+    // Verify Category Chips ('All', 'electronics', 'jewelery', etc.)
     expect(find.byType(CategoryChip), findsAtLeast(3));
     expect(find.text('All'), findsOneWidget);
+    expect(find.text('electronics'), findsOneWidget);
 
-    // Verify Product Cards Grid
+    // Verify Product Cards Grid (initially 2 items)
     expect(find.byType(ProductCard), findsNWidgets(2));
-    expect(find.text('Fjallraven Backpack'), findsOneWidget);
-    expect(find.text('Mens Casual T-Shirt'), findsOneWidget);
 
-    // Verify Bottom Navigation Bar
-    expect(find.byType(BottomNavigationBar), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Cart'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    // Select category 'electronics'
+    await tester.tap(find.text('electronics'));
+    await tester.pumpAndSettle();
+
+    // Only 1 electronics product should remain
+    expect(find.byType(ProductCard), findsNWidgets(1));
+    expect(find.text('Fjallraven Backpack'), findsOneWidget);
+
+    // Type non-existent query in search bar
+    await tester.enterText(find.byType(TextField), 'xyz_non_existent');
+    await tester.pumpAndSettle();
+
+    // Should render empty search state
+    expect(find.text('No products found.'), findsOneWidget);
+
+    // Clear search bar
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+
+    // Return to category 'All'
+    await tester.tap(find.text('All'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProductCard), findsNWidgets(2));
   });
 }

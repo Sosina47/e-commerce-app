@@ -88,4 +88,58 @@ class ApiService {
       throw ApiException('An error occurred while fetching products: ${e.toString()}');
     }
   }
+
+  /// Fetches categories list from Fake Store API.
+  /// Returns a list of category strings.
+  Future<List<String>> getCategories() async {
+    final url = Uri.parse('$baseUrl/products/categories');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) => item.toString()).toList();
+      } else {
+        throw ApiException('Failed to load categories (${response.statusCode}).');
+      }
+    } on SocketException {
+      throw ApiException('Network error. Unable to load categories.');
+    } on http.ClientException {
+      throw ApiException('Network connection failed.');
+    } on FormatException {
+      throw ApiException('Failed to process categories data format.');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('An error occurred while fetching categories: ${e.toString()}');
+    }
+  }
+
+  /// Fetches products belonging to a specific category from Fake Store API.
+  Future<List<Product>> getProductsByCategory(String category) async {
+    final encodedCategory = Uri.encodeComponent(category);
+    final url = Uri.parse('$baseUrl/products/category/$encodedCategory');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json as Map<String, dynamic>)).toList();
+      } else {
+        throw ApiException('Failed to load category products (${response.statusCode}).');
+      }
+    } on SocketException {
+      throw ApiException('Network error. Unable to load category products.');
+    } on http.ClientException {
+      throw ApiException('Network connection failed.');
+    } on FormatException {
+      throw ApiException('Failed to process data format.');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('An error occurred while fetching category products: ${e.toString()}');
+    }
+  }
 }

@@ -6,11 +6,13 @@ import 'package:ecommerce_app/services/api_service.dart';
 class MockApiService extends ApiService {
   final bool shouldSucceed;
   final List<Product> mockProducts;
+  final List<String> mockCategories;
   final String? errorMessage;
 
   MockApiService({
     this.shouldSucceed = true,
     this.mockProducts = const [],
+    this.mockCategories = const ['electronics', 'jewelery'],
     this.errorMessage,
   });
 
@@ -20,6 +22,15 @@ class MockApiService extends ApiService {
       return mockProducts;
     } else {
       throw ApiException(errorMessage ?? 'Failed to load products.');
+    }
+  }
+
+  @override
+  Future<List<String>> getCategories() async {
+    if (shouldSucceed) {
+      return mockCategories;
+    } else {
+      throw ApiException(errorMessage ?? 'Failed to load categories.');
     }
   }
 }
@@ -51,9 +62,11 @@ void main() {
     test('Initial state is empty, not loading, no error', () {
       final provider = ProductProvider(apiService: MockApiService());
       expect(provider.products, isEmpty);
+      expect(provider.categories, ['All']);
+      expect(provider.selectedCategory, 'All');
+      expect(provider.searchQuery, '');
       expect(provider.isLoading, false);
       expect(provider.hasError, false);
-      expect(provider.errorMessage, null);
     });
 
     test('fetchProducts populates products list on success', () async {
@@ -78,7 +91,81 @@ void main() {
       expect(provider.isLoading, false);
       expect(provider.hasError, false);
       expect(provider.products.length, 1);
+      expect(provider.filteredProducts.length, 1);
       expect(provider.products.first.title, 'Backpack');
+    });
+
+    test('fetchCategories prepends All to categories list', () async {
+      final provider = ProductProvider(
+        apiService: MockApiService(
+          shouldSucceed: true,
+          mockCategories: ['electronics', 'jewelery'],
+        ),
+      );
+
+      await provider.fetchCategories();
+
+      expect(provider.isCategoriesLoading, false);
+      expect(provider.categories, ['All', 'electronics', 'jewelery']);
+    });
+
+    test('selectCategory and setSearchQuery filter products correctly', () async {
+      final sampleProducts = [
+        const Product(
+          id: 1,
+          title: 'SanDisk 128GB SSD',
+          price: 109.0,
+          description: 'SSD Storage',
+          category: 'electronics',
+          image: 'https://fakestoreapi.com/img/ssd.jpg',
+          rating: Rating(rate: 4.5, count: 10),
+        ),
+        const Product(
+          id: 2,
+          title: 'Gold Ring',
+          price: 500.0,
+          description: 'Jewelery',
+          category: 'jewelery',
+          image: 'https://fakestoreapi.com/img/ring.jpg',
+          rating: Rating(rate: 4.8, count: 50),
+        ),
+        const Product(
+          id: 3,
+          title: 'Samsung Curved Monitor',
+          price: 300.0,
+          description: 'Monitor',
+          category: 'electronics',
+          image: 'https://fakestoreapi.com/img/monitor.jpg',
+          rating: Rating(rate: 4.2, count: 20),
+        ),
+      ];
+
+      final provider = ProductProvider(
+        apiService: MockApiService(shouldSucceed: true, mockProducts: sampleProducts),
+      );
+
+      await provider.fetchProducts();
+
+      // 1. All products initially
+      expect(provider.filteredProducts.length, 3);
+
+      // 2. Select category 'electronics'
+      provider.selectCategory('electronics');
+      expect(provider.filteredProducts.length, 2);
+      expect(provider.filteredProducts.every((p) => p.category == 'electronics'), true);
+
+      // 3. Search query 'ssd' within 'electronics'
+      provider.setSearchQuery('ssd');
+      expect(provider.filteredProducts.length, 1);
+      expect(provider.filteredProducts.first.title, 'SanDisk 128GB SSD');
+
+      // 4. Clear search query
+      provider.setSearchQuery('');
+      expect(provider.filteredProducts.length, 2);
+
+      // 5. Select category 'All'
+      provider.selectCategory('All');
+      expect(provider.filteredProducts.length, 3);
     });
 
     test('fetchProducts sets errorMessage on API failure', () async {

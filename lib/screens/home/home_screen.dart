@@ -14,24 +14,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedCategoryIndex = 0;
   int _currentBottomNavIndex = 0;
   final TextEditingController _searchController = TextEditingController();
-
-  final List<String> _categories = [
-    'All',
-    'Electronics',
-    'Jewelery',
-    "Men's Clothing",
-    "Women's Clothing",
-  ];
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       if (mounted) {
-        context.read<ProductProvider>().fetchProducts();
+        final provider = context.read<ProductProvider>();
+        provider.fetchCategories();
+        provider.fetchProducts();
       }
     });
   }
@@ -71,12 +64,24 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 12),
 
-              // Search Bar (UI only)
+              // Search Bar
               TextField(
                 controller: _searchController,
+                onChanged: (value) {
+                  context.read<ProductProvider>().setSearchQuery(value);
+                },
                 decoration: InputDecoration(
                   hintText: 'Search products...',
                   prefixIcon: const Icon(Icons.search, color: primaryColor),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                          onPressed: () {
+                            _searchController.clear();
+                            context.read<ProductProvider>().setSearchQuery('');
+                          },
+                        )
+                      : null,
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -96,25 +101,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Category Section (UI only)
-              SizedBox(
-                height: 42,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    return CategoryChip(
-                      label: _categories[index],
-                      isSelected: _selectedCategoryIndex == index,
-                      onTap: () {
-                        setState(() {
-                          _selectedCategoryIndex = index;
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
+              // Category Section
+              _buildCategorySection(productProvider),
               const SizedBox(height: 16),
 
               // Product Grid / Loading / Error / Empty States
@@ -126,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // Bottom Navigation Bar (UI only)
+      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
@@ -164,6 +152,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySection(ProductProvider provider) {
+    if (provider.isCategoriesLoading) {
+      return const SizedBox(
+        height: 42,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(color: Colors.deepPurple, strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (provider.hasCategoriesError) {
+      return SizedBox(
+        height: 42,
+        child: Row(
+          children: [
+            const Text(
+              'Unable to load categories.',
+              style: TextStyle(fontSize: 13, color: Colors.redAccent),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () {
+                context.read<ProductProvider>().fetchCategories(forceRefresh: true);
+              },
+              child: const Text('Tap to Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 42,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: provider.categories.length,
+        itemBuilder: (context, index) {
+          final category = provider.categories[index];
+          final isSelected = provider.selectedCategory == category;
+          return CategoryChip(
+            label: category,
+            isSelected: isSelected,
+            onTap: () {
+              context.read<ProductProvider>().selectCategory(category);
+            },
+          );
+        },
       ),
     );
   }
@@ -230,15 +273,39 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 3. Empty State
-    if (provider.isEmpty) {
-      return const Center(
-        child: Text(
-          'No Products Available',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
+    final filteredProducts = provider.filteredProducts;
+
+    // 3. Empty State (no products match category or search query)
+    if (filteredProducts.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.search_off_outlined,
+                  size: 48,
+                  color: Colors.deepPurple,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No products found.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF64748B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
@@ -250,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
         return GridView.builder(
           padding: const EdgeInsets.only(bottom: 16),
-          itemCount: provider.products.length,
+          itemCount: filteredProducts.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             childAspectRatio: 0.70,
@@ -258,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSpacing: 14,
           ),
           itemBuilder: (context, index) {
-            final product = provider.products[index];
+            final product = filteredProducts[index];
             return ProductCard(
               product: product,
               onTap: () {},
