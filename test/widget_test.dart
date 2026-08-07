@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecommerce_app/main.dart';
 
 void main() {
-  testWidgets('Renders Login Screen elements', (WidgetTester tester) async {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('Renders Login Screen elements when unauthenticated', (WidgetTester tester) async {
     await tester.pumpWidget(const EcommerceApp());
+    await tester.pumpAndSettle();
 
     // Verify Title & Welcome text
     expect(find.text('Fake Store'), findsOneWidget);
@@ -17,6 +23,7 @@ void main() {
 
   testWidgets('Triggers empty form validation on Login press', (WidgetTester tester) async {
     await tester.pumpWidget(const EcommerceApp());
+    await tester.pumpAndSettle();
 
     // Tap Login button with empty fields
     await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
