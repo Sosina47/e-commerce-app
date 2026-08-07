@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/category_chip.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/error_widget.dart';
+import '../../widgets/loading_widget.dart';
 import '../../widgets/product_card.dart';
 import '../cart/cart_screen.dart';
 import '../product/product_details_screen.dart';
@@ -305,90 +308,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProductContent(ProductProvider provider) {
     // 1. Loading State
     if (provider.isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: Colors.deepPurple),
-            SizedBox(height: 16),
-            Text(
-              'Loading Products...',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
-      );
+      return const LoadingWidget(message: 'Loading Products...');
     }
 
     // 2. Error State
     if (provider.hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.wifi_off_rounded,
-                size: 64,
-                color: Colors.redAccent,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Unable to connect.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please try again.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  context.read<ProductProvider>().fetchProducts(forceRefresh: true);
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return AppErrorWidget(
+        title: 'Unable to connect.',
+        message: 'Please try again.',
+        onRetry: () {
+          context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+        },
       );
     }
 
     // 3. Empty Products (initial fetch returned empty)
     if (provider.products.isEmpty) {
-      return const Center(
-        child: Text(
-          'No products available.',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
-          ),
-        ),
+      return const EmptyStateWidget(
+        icon: Icons.inventory_2_outlined,
+        title: 'No products available.',
       );
     }
 
@@ -396,37 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 4. Empty Search State (search or category returned empty)
     if (filteredProducts.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.search_off_outlined,
-                  size: 48,
-                  color: Colors.deepPurple,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'No products found.',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return const EmptyStateWidget(
+        icon: Icons.search_off_outlined,
+        title: 'No products found.',
       );
     }
 

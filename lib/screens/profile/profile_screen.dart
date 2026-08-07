@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/error_widget.dart';
+import '../../widgets/loading_widget.dart';
 import '../login/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -59,78 +61,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context) {
             // 1. Loading State
             if (userProvider.isLoading) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: primaryColor),
-                    SizedBox(height: 16),
-                    Text(
-                      'Loading Profile...',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              return const LoadingWidget(message: 'Loading Profile...');
             }
 
             // 2. Error State
             if (userProvider.hasError || userProvider.user == null) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.wifi_off_rounded,
-                        size: 64,
-                        color: Colors.redAccent,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Unable to connect.',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Please try again.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF64748B),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: () {
-                          if (authUsername.isNotEmpty) {
-                            context.read<UserProvider>().loadUser(authUsername, forceRefresh: true);
-                          }
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
+              return AppErrorWidget(
+                title: 'Unable to connect.',
+                message: 'Please try again.',
+                onRetry: () {
+                  if (authUsername.isNotEmpty) {
+                    context.read<UserProvider>().loadUser(authUsername, forceRefresh: true);
+                  }
+                },
               );
             }
 

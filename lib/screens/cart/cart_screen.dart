@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -15,13 +16,13 @@ class CartScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      // appBar: AppBar(
-      //   title: const Text('Shopping Cart'),
-      //   centerTitle: true,
-      // ),
       body: SafeArea(
         child: cartItems.isEmpty
-            ? _buildEmptyCartState(context)
+            ? const EmptyStateWidget(
+                icon: Icons.shopping_cart_outlined,
+                title: 'Your cart is empty.',
+                subtitle: 'Start shopping.',
+              )
             : Column(
                 children: [
                   // Cart Items List
@@ -234,48 +235,6 @@ class CartScreen extends StatelessWidget {
                   ),
                 ],
               ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyCartState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.deepPurple.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.shopping_cart_outlined,
-                size: 72,
-                color: Colors.deepPurple,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Your cart is empty.',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Start shopping.',
-              style: TextStyle(
-                fontSize: 15,
-                color: Color(0xFF64748B),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
