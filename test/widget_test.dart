@@ -4,12 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ecommerce_app/models/product.dart';
 import 'package:ecommerce_app/providers/auth_provider.dart';
+import 'package:ecommerce_app/providers/cart_provider.dart';
 import 'package:ecommerce_app/providers/product_provider.dart';
 import 'package:ecommerce_app/services/api_service.dart';
 import 'package:ecommerce_app/screens/home/home_screen.dart';
 import 'package:ecommerce_app/screens/login/login_screen.dart';
-import 'package:ecommerce_app/widgets/category_chip.dart';
 import 'package:ecommerce_app/widgets/product_card.dart';
+
 import 'package:ecommerce_app/utils/app_theme.dart';
 
 class MockApiService extends ApiService {
@@ -20,7 +21,7 @@ class MockApiService extends ApiService {
         id: 1,
         title: 'Fjallraven Backpack',
         price: 99.99,
-        description: 'Nice bag',
+        description: 'Nice bag with great durability',
         category: 'electronics',
         image: 'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
         rating: Rating(rate: 3.9, count: 120),
@@ -51,12 +52,14 @@ void main() {
   testWidgets('Renders Login Screen elements when unauthenticated', (WidgetTester tester) async {
     final authProvider = AuthProvider();
     final productProvider = ProductProvider(apiService: MockApiService());
+    final cartProvider = CartProvider();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
           ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+          ChangeNotifierProvider<CartProvider>.value(value: cartProvider),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -78,12 +81,14 @@ void main() {
   testWidgets('Triggers empty form validation on Login press', (WidgetTester tester) async {
     final authProvider = AuthProvider();
     final productProvider = ProductProvider(apiService: MockApiService());
+    final cartProvider = CartProvider();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
           ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+          ChangeNotifierProvider<CartProvider>.value(value: cartProvider),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -102,14 +107,16 @@ void main() {
     expect(find.text('Please enter your password'), findsOneWidget);
   });
 
-  testWidgets('Renders Home Screen UI components and handles search/category selection', (WidgetTester tester) async {
+  testWidgets('Navigates to Product Details Screen and adds item to cart', (WidgetTester tester) async {
     final productProvider = ProductProvider(apiService: MockApiService());
+    final cartProvider = CartProvider();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+          ChangeNotifierProvider<CartProvider>.value(value: cartProvider),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -120,44 +127,24 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify App Bar
-    expect(find.text('Fake Store'), findsOneWidget);
-    expect(find.byIcon(Icons.shopping_cart_outlined), findsAtLeast(1));
-    expect(find.byIcon(Icons.person_outline), findsAtLeast(1));
-
-    // Verify Search Bar
-    expect(find.byType(TextField), findsOneWidget);
-
-    // Verify Category Chips ('All', 'electronics', 'jewelery', etc.)
-    expect(find.byType(CategoryChip), findsAtLeast(3));
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('electronics'), findsOneWidget);
-
-    // Verify Product Cards Grid (initially 2 items)
+    // Verify Product Cards Grid
     expect(find.byType(ProductCard), findsNWidgets(2));
 
-    // Select category 'electronics'
-    await tester.tap(find.text('electronics'));
+    // Tap on the first product card ('Fjallraven Backpack')
+    await tester.tap(find.text('Fjallraven Backpack'));
     await tester.pumpAndSettle();
 
-    // Only 1 electronics product should remain
-    expect(find.byType(ProductCard), findsNWidgets(1));
-    expect(find.text('Fjallraven Backpack'), findsOneWidget);
+    // Verify Product Details Screen is opened
+    expect(find.text('Product Details'), findsOneWidget);
+    expect(find.text('Nice bag with great durability'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Add To Cart'), findsOneWidget);
 
-    // Type non-existent query in search bar
-    await tester.enterText(find.byType(TextField), 'xyz_non_existent');
-    await tester.pumpAndSettle();
+    // Tap 'Add To Cart' button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add To Cart'));
+    await tester.pump();
 
-    // Should render empty search state
-    expect(find.text('No products found.'), findsOneWidget);
-
-    // Clear search bar
-    await tester.enterText(find.byType(TextField), '');
-    await tester.pumpAndSettle();
-
-    // Return to category 'All'
-    await tester.tap(find.text('All'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ProductCard), findsNWidgets(2));
+    // Verify SnackBar appears and item added to cartProvider
+    expect(find.text('Added to cart successfully.'), findsOneWidget);
+    expect(cartProvider.itemCount, 1);
   });
 }

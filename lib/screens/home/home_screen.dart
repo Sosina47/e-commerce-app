@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/product_card.dart';
+import '../product/product_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -328,8 +329,16 @@ class _HomeScreenState extends State<HomeScreen> {
             final product = filteredProducts[index];
             return ProductCard(
               product: product,
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailsScreen(product: product),
+                  ),
+                );
+              },
             );
+
           },
         );
       },
