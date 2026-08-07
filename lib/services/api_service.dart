@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../models/product.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -57,6 +58,34 @@ class ApiService {
       rethrow;
     } catch (e) {
       throw ApiException('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  /// Fetches all products from Fake Store API.
+  /// Returns a list of [Product] items.
+  /// Throws [ApiException] on network, HTTP, or parsing failure.
+  Future<List<Product>> getProducts() async {
+    final url = Uri.parse('$baseUrl/products');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json as Map<String, dynamic>)).toList();
+      } else {
+        throw ApiException('Failed to load products from server (${response.statusCode}).');
+      }
+    } on SocketException {
+      throw ApiException('Network error. Please check your internet connection.');
+    } on http.ClientException {
+      throw ApiException('Network connection failed. Please try again.');
+    } on FormatException {
+      throw ApiException('Failed to process products data format.');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('An error occurred while fetching products: ${e.toString()}');
     }
   }
 }

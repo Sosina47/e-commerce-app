@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import '../models/product.dart';
 
 class ProductCard extends StatelessWidget {
-  final String title;
-  final String price;
-  final IconData icon;
+  final Product product;
   final VoidCallback? onTap;
 
   const ProductCard({
     super.key,
-    required this.title,
-    required this.price,
-    this.icon = Icons.shopping_bag_outlined,
+    required this.product,
     this.onTap,
   });
 
@@ -41,20 +38,44 @@ class ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product Image Placeholder Box
+                // Product Image Box
                 Expanded(
                   child: Container(
                     width: double.infinity,
+                    padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.06),
+                      color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(
-                      child: Icon(
-                        icon,
-                        size: 48,
-                        color: primaryColor.withValues(alpha: 0.7),
-                      ),
+                    child: Image.network(
+                      product.image,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                              strokeWidth: 2.0,
+                              color: primaryColor,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            size: 40,
+                            color: Colors.grey.shade400,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -62,7 +83,7 @@ class ProductCard extends StatelessWidget {
 
                 // Product Title
                 Text(
-                  title,
+                  product.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -76,7 +97,7 @@ class ProductCard extends StatelessWidget {
 
                 // Product Price
                 Text(
-                  price,
+                  '\$${product.price.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,

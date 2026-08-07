@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/product_provider.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/product_card.dart';
 
@@ -24,48 +26,15 @@ class _HomeScreenState extends State<HomeScreen> {
     "Women's Clothing",
   ];
 
-  final List<Map<String, dynamic>> _placeholderProducts = [
-    {
-      'title': 'Fjallraven - Foldsack No. 1 Backpack',
-      'price': '\$99.99',
-      'icon': Icons.backpack_outlined,
-    },
-    {
-      'title': 'Mens Casual Premium Slim Fit T-Shirt',
-      'price': '\$99.99',
-      'icon': Icons.checkroom_outlined,
-    },
-    {
-      'title': 'Mens Cotton Jacket Outdoor Casual',
-      'price': '\$99.99',
-      'icon': Icons.dry_cleaning_outlined,
-    },
-    {
-      'title': 'Mens Casual Slim Fit Long Sleeve',
-      'price': '\$99.99',
-      'icon': Icons.checkroom_outlined,
-    },
-    {
-      'title': 'John Hardy Womens Legends Naga Bracelet',
-      'price': '\$99.99',
-      'icon': Icons.diamond_outlined,
-    },
-    {
-      'title': 'Solid Gold Petite Micropave Ring',
-      'price': '\$99.99',
-      'icon': Icons.style_outlined,
-    },
-    {
-      'title': 'WD 2TB Elements Portable Hard Drive',
-      'price': '\$99.99',
-      'icon': Icons.sd_storage_outlined,
-    },
-    {
-      'title': 'SanDisk SSD PLUS 1TB Internal SSD',
-      'price': '\$99.99',
-      'icon': Icons.memory_outlined,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (mounted) {
+        context.read<ProductProvider>().fetchProducts();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -76,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     const primaryColor = Colors.deepPurple;
+    final productProvider = context.watch<ProductProvider>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -101,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 12),
 
-              // Search Bar
+              // Search Bar (UI only)
               TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
@@ -126,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Category Section
+              // Category Section (UI only)
               SizedBox(
                 height: 42,
                 child: ListView.builder(
@@ -147,39 +117,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Product Grid
+              // Product Grid / Loading / Error / Empty States
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-                    return GridView.builder(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: _placeholderProducts.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 14,
-                        mainAxisSpacing: 14,
-                      ),
-                      itemBuilder: (context, index) {
-                        final product = _placeholderProducts[index];
-                        return ProductCard(
-                          title: product['title'] as String,
-                          price: product['price'] as String,
-                          icon: product['icon'] as IconData,
-                          onTap: () {},
-                        );
-                      },
-                    );
-                  },
-                ),
+                child: _buildProductContent(productProvider),
               ),
             ],
           ),
         ),
       ),
 
-      // Bottom Navigation Bar
+      // Bottom Navigation Bar (UI only)
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
@@ -218,6 +165,107 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProductContent(ProductProvider provider) {
+    // 1. Loading State
+    if (provider.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.deepPurple),
+      );
+    }
+
+    // 2. Error State
+    if (provider.hasError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong.',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                provider.errorMessage ?? 'Unable to fetch products.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  context.read<ProductProvider>().fetchProducts(forceRefresh: true);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tap to Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 3. Empty State
+    if (provider.isEmpty) {
+      return const Center(
+        child: Text(
+          'No Products Available',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      );
+    }
+
+    // 4. Success State (Product Grid)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+        return GridView.builder(
+          padding: const EdgeInsets.only(bottom: 16),
+          itemCount: provider.products.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 0.70,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+          ),
+          itemBuilder: (context, index) {
+            final product = provider.products[index];
+            return ProductCard(
+              product: product,
+              onTap: () {},
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -1,9 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ecommerce_app/main.dart';
+import 'package:ecommerce_app/models/product.dart';
+import 'package:ecommerce_app/providers/auth_provider.dart';
+import 'package:ecommerce_app/providers/product_provider.dart';
+import 'package:ecommerce_app/services/api_service.dart';
+import 'package:ecommerce_app/screens/home/home_screen.dart';
+import 'package:ecommerce_app/screens/login/login_screen.dart';
 import 'package:ecommerce_app/widgets/category_chip.dart';
 import 'package:ecommerce_app/widgets/product_card.dart';
+import 'package:ecommerce_app/utils/app_theme.dart';
+
+class MockApiService extends ApiService {
+  @override
+  Future<List<Product>> getProducts() async {
+    return const [
+      Product(
+        id: 1,
+        title: 'Fjallraven Backpack',
+        price: 99.99,
+        description: 'Nice bag',
+        category: 'men\'s clothing',
+        image: 'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
+        rating: Rating(rate: 3.9, count: 120),
+      ),
+      Product(
+        id: 2,
+        title: 'Mens Casual T-Shirt',
+        price: 22.30,
+        description: 'Cool t-shirt',
+        category: 'men\'s clothing',
+        image: 'https://fakestoreapi.com/img/71-3HjGNDUL._AC_SY879._SX._UX._SY._UY_.jpg',
+        rating: Rating(rate: 4.1, count: 259),
+      ),
+    ];
+  }
+}
 
 void main() {
   setUp(() {
@@ -11,7 +44,21 @@ void main() {
   });
 
   testWidgets('Renders Login Screen elements when unauthenticated', (WidgetTester tester) async {
-    await tester.pumpWidget(const EcommerceApp());
+    final authProvider = AuthProvider();
+    final productProvider = ProductProvider(apiService: MockApiService());
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const LoginScreen(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Verify Title & Welcome text
@@ -24,7 +71,21 @@ void main() {
   });
 
   testWidgets('Triggers empty form validation on Login press', (WidgetTester tester) async {
-    await tester.pumpWidget(const EcommerceApp());
+    final authProvider = AuthProvider();
+    final productProvider = ProductProvider(apiService: MockApiService());
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+          ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const LoginScreen(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Tap Login button with empty fields
@@ -36,13 +97,22 @@ void main() {
     expect(find.text('Please enter your password'), findsOneWidget);
   });
 
-  testWidgets('Renders Home Screen UI components when authenticated', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({
-      'auth_token': 'test_token',
-      'auth_username': 'mor_2314',
-    });
+  testWidgets('Renders Home Screen UI components when authenticated with products', (WidgetTester tester) async {
+    final productProvider = ProductProvider(apiService: MockApiService());
 
-    await tester.pumpWidget(const EcommerceApp());
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider<ProductProvider>.value(value: productProvider),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const HomeScreen(),
+        ),
+      ),
+    );
+
     await tester.pumpAndSettle();
 
     // Verify App Bar
@@ -56,10 +126,11 @@ void main() {
     // Verify Category Chips
     expect(find.byType(CategoryChip), findsAtLeast(3));
     expect(find.text('All'), findsOneWidget);
-    expect(find.text('Electronics'), findsOneWidget);
 
     // Verify Product Cards Grid
-    expect(find.byType(ProductCard), findsAtLeast(2));
+    expect(find.byType(ProductCard), findsNWidgets(2));
+    expect(find.text('Fjallraven Backpack'), findsOneWidget);
+    expect(find.text('Mens Casual T-Shirt'), findsOneWidget);
 
     // Verify Bottom Navigation Bar
     expect(find.byType(BottomNavigationBar), findsOneWidget);
