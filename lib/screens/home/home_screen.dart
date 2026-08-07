@@ -6,6 +6,7 @@ import '../../widgets/category_chip.dart';
 import '../../widgets/product_card.dart';
 import '../cart/cart_screen.dart';
 import '../product/product_details_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,10 +45,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final productProvider = context.watch<ProductProvider>();
     final cartItemCount = context.watch<CartProvider>().itemCount;
 
+    String appBarTitle = 'Fake Store';
+    if (_currentBottomNavIndex == 1) {
+      appBarTitle = 'Shopping Cart';
+    } else if (_currentBottomNavIndex == 2) {
+      appBarTitle = 'Profile';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(_currentBottomNavIndex == 1 ? 'Shopping Cart' : 'Fake Store'),
+        title: Text(appBarTitle),
         actions: [
           Stack(
             alignment: Alignment.center,
@@ -89,70 +97,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () {},
+            onPressed: () {
+              setState(() {
+                _currentBottomNavIndex = 2;
+              });
+            },
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: _currentBottomNavIndex == 1
-          ? const CartScreen()
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-
-                    // Search Bar
-                    TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        context.read<ProductProvider>().setSearchQuery(value);
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search products...',
-                        prefixIcon: const Icon(Icons.search, color: primaryColor),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  context.read<ProductProvider>().setSearchQuery('');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: primaryColor, width: 2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Category Section
-                    _buildCategorySection(productProvider),
-                    const SizedBox(height: 16),
-
-                    // Product Grid / Loading / Error / Empty States
-                    Expanded(
-                      child: _buildProductContent(productProvider),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      body: _buildBodyContent(productProvider),
 
       // Bottom Navigation Bar
       bottomNavigationBar: Container(
@@ -199,6 +153,73 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profile',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBodyContent(ProductProvider productProvider) {
+    if (_currentBottomNavIndex == 1) {
+      return const CartScreen();
+    }
+    if (_currentBottomNavIndex == 2) {
+      return const ProfileScreen();
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+
+            // Search Bar
+            TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                context.read<ProductProvider>().setSearchQuery(value);
+              },
+              decoration: InputDecoration(
+                hintText: 'Search products...',
+                prefixIcon: const Icon(Icons.search, color: Colors.deepPurple),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                        onPressed: () {
+                          _searchController.clear();
+                          context.read<ProductProvider>().setSearchQuery('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Category Section
+            _buildCategorySection(productProvider),
+            const SizedBox(height: 16),
+
+            // Product Grid / Loading / Error / Empty States
+            Expanded(
+              child: _buildProductContent(productProvider),
             ),
           ],
         ),

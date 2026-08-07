@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
+import '../models/user.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -141,5 +142,43 @@ class ApiService {
     } catch (e) {
       throw ApiException('An error occurred while fetching category products: ${e.toString()}');
     }
+  }
+
+  /// Fetches all users from Fake Store API (`GET /users`).
+  Future<List<UserProfile>> getUsers() async {
+    final url = Uri.parse('$baseUrl/users');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => UserProfile.fromJson(json)).toList();
+      } else {
+        throw ApiException('Failed to load users (${response.statusCode}).');
+      }
+    } on SocketException {
+      throw ApiException('Network error. Unable to load profile data.');
+    } on http.ClientException {
+      throw ApiException('Network connection failed.');
+    } on FormatException {
+      throw ApiException('Failed to process users data format.');
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('An error occurred while fetching users: ${e.toString()}');
+    }
+  }
+
+  /// Locates user by matching username against users list returned by API.
+  Future<UserProfile?> getUserByUsername(String username) async {
+    final users = await getUsers();
+    final target = username.trim().toLowerCase();
+    for (final u in users) {
+      if (u.username.toLowerCase() == target) {
+        return u;
+      }
+    }
+    return null;
   }
 }
