@@ -13,6 +13,9 @@ class CartProvider with ChangeNotifier {
     return _items.values.fold(0, (sum, item) => sum + item.quantity);
   }
 
+  int get totalItems => itemCount;
+
+
   double calculateTotal() {
     return _items.values.fold(0.0, (sum, item) => sum + item.totalPrice);
   }

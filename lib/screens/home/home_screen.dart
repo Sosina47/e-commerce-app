@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/product_card.dart';
+import '../cart/cart_screen.dart';
 import '../product/product_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -40,15 +42,50 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     const primaryColor = Colors.deepPurple;
     final productProvider = context.watch<ProductProvider>();
+    final cartItemCount = context.watch<CartProvider>().itemCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Fake Store'),
+        title: Text(_currentBottomNavIndex == 1 ? 'Shopping Cart' : 'Fake Store'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () {},
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: () {
+                  setState(() {
+                    _currentBottomNavIndex = 1;
+                  });
+                },
+              ),
+              if (cartItemCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$cartItemCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
@@ -57,63 +94,65 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 12),
+      body: _currentBottomNavIndex == 1
+          ? const CartScreen()
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
 
-              // Search Bar
-              TextField(
-                controller: _searchController,
-                onChanged: (value) {
-                  context.read<ProductProvider>().setSearchQuery(value);
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  prefixIcon: const Icon(Icons.search, color: primaryColor),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
-                          onPressed: () {
-                            _searchController.clear();
-                            context.read<ProductProvider>().setSearchQuery('');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: primaryColor, width: 2),
-                  ),
+                    // Search Bar
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        context.read<ProductProvider>().setSearchQuery(value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        prefixIcon: const Icon(Icons.search, color: primaryColor),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  context.read<ProductProvider>().setSearchQuery('');
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: primaryColor, width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Category Section
+                    _buildCategorySection(productProvider),
+                    const SizedBox(height: 16),
+
+                    // Product Grid / Loading / Error / Empty States
+                    Expanded(
+                      child: _buildProductContent(productProvider),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Category Section
-              _buildCategorySection(productProvider),
-              const SizedBox(height: 16),
-
-              // Product Grid / Loading / Error / Empty States
-              Expanded(
-                child: _buildProductContent(productProvider),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
 
       // Bottom Navigation Bar
       bottomNavigationBar: Container(
@@ -135,18 +174,28 @@ class _HomeScreenState extends State<HomeScreen> {
               _currentBottomNavIndex = index;
             });
           },
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              activeIcon: Icon(Icons.shopping_cart),
+              icon: Badge(
+                isLabelVisible: cartItemCount > 0,
+                label: Text('$cartItemCount'),
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.shopping_cart_outlined),
+              ),
+              activeIcon: Badge(
+                isLabelVisible: cartItemCount > 0,
+                label: Text('$cartItemCount'),
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.shopping_cart),
+              ),
               label: 'Cart',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Profile',
@@ -338,7 +387,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             );
-
           },
         );
       },
