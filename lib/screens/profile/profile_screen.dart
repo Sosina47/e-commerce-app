@@ -54,17 +54,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      // appBar: AppBar(
-      //   title: const Text('Profile'),
-      //   centerTitle: true,
-      // ),
       body: SafeArea(
         child: Builder(
           builder: (context) {
             // 1. Loading State
             if (userProvider.isLoading) {
               return const Center(
-                child: CircularProgressIndicator(color: primaryColor),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: primaryColor),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading Profile...',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -77,13 +87,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
-                        Icons.error_outline,
+                        Icons.wifi_off_rounded,
                         size: 64,
                         color: Colors.redAccent,
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Unable to load profile.',
+                        'Unable to connect.',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -91,7 +101,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Please try again.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,

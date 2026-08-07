@@ -231,12 +231,19 @@ class _HomeScreenState extends State<HomeScreen> {
     if (provider.isCategoriesLoading) {
       return const SizedBox(
         height: 42,
-        child: Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(color: Colors.deepPurple, strokeWidth: 2),
-          ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(color: Colors.deepPurple, strokeWidth: 2),
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Loading Categories...',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+          ],
         ),
       );
     }
@@ -255,9 +262,22 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 context.read<ProductProvider>().fetchCategories(forceRefresh: true);
               },
-              child: const Text('Tap to Retry'),
+              child: const Text('Retry'),
             ),
           ],
+        ),
+      );
+    }
+
+    if (provider.categories.isEmpty) {
+      return const SizedBox(
+        height: 42,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'No categories available.',
+            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+          ),
         ),
       );
     }
@@ -286,7 +306,21 @@ class _HomeScreenState extends State<HomeScreen> {
     // 1. Loading State
     if (provider.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Colors.deepPurple),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Colors.deepPurple),
+            SizedBox(height: 16),
+            Text(
+              'Loading Products...',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -299,13 +333,13 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.error_outline,
+                Icons.wifi_off_rounded,
                 size: 64,
                 color: Colors.redAccent,
               ),
               const SizedBox(height: 16),
               const Text(
-                'Something went wrong.',
+                'Unable to connect.',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -314,9 +348,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
-                provider.errorMessage ?? 'Unable to fetch products.',
-                style: const TextStyle(
+              const Text(
+                'Please try again.',
+                style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF64748B),
                 ),
@@ -336,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context.read<ProductProvider>().fetchProducts(forceRefresh: true);
                 },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Tap to Retry'),
+                label: const Text('Retry'),
               ),
             ],
           ),
@@ -344,9 +378,23 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    // 3. Empty Products (initial fetch returned empty)
+    if (provider.products.isEmpty) {
+      return const Center(
+        child: Text(
+          'No products available.',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      );
+    }
+
     final filteredProducts = provider.filteredProducts;
 
-    // 3. Empty State (no products match category or search query)
+    // 4. Empty Search State (search or category returned empty)
     if (filteredProducts.isEmpty) {
       return Center(
         child: Padding(
@@ -382,10 +430,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 4. Success State (Product Grid)
+    // 5. Success State (Product Grid)
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+        int crossAxisCount = 2;
+        if (constraints.maxWidth > 900) {
+          crossAxisCount = 4;
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 3;
+        }
+
         return GridView.builder(
           padding: const EdgeInsets.only(bottom: 16),
           itemCount: filteredProducts.length,

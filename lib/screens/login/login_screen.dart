@@ -235,13 +235,27 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: isLoading ? null : _handleLogin,
                         child: isLoading
-                            ? const SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Logging in...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               )
                             : const Text(
                                 'Login',
@@ -251,6 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   letterSpacing: 0.5,
                                 ),
                               ),
+
                       ),
                     ),
                   ],
