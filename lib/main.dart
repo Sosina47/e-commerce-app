@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
-import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
+import 'screens/login/login_screen.dart';
 import 'utils/app_theme.dart';
 
 void main() {
@@ -14,20 +11,11 @@ class EcommerceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: MaterialApp(
-        title: 'FakeStore E-Commerce',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        initialRoute: LoginScreen.routeName,
-        routes: {
-          LoginScreen.routeName: (ctx) => const LoginScreen(),
-          HomeScreen.routeName: (ctx) => const HomeScreen(),
-        },
-      ),
+    return MaterialApp(
+      title: 'Fake Store',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      home: const LoginScreen(),
     );
   }
 }

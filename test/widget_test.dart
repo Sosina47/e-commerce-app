@@ -1,13 +1,29 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ecommerce_app/main.dart';
 
 void main() {
-  testWidgets('App smoke test - renders Login Screen', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Renders Login Screen elements', (WidgetTester tester) async {
     await tester.pumpWidget(const EcommerceApp());
 
-    // Verify that the login screen title appears.
-    expect(find.text('FakeStore E-Commerce'), findsOneWidget);
-    expect(find.text('Login (Placeholder)'), findsOneWidget);
+    // Verify Title & Welcome text
+    expect(find.text('Fake Store'), findsOneWidget);
+    expect(find.text('Welcome Back'), findsOneWidget);
+
+    // Verify Username & Password input fields
+    expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+  });
+
+  testWidgets('Triggers empty form validation on Login press', (WidgetTester tester) async {
+    await tester.pumpWidget(const EcommerceApp());
+
+    // Tap Login button with empty fields
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+    await tester.pump();
+
+    // Verify validation messages appear
+    expect(find.text('Please enter your username'), findsOneWidget);
+    expect(find.text('Please enter your password'), findsOneWidget);
   });
 }
