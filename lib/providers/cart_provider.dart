@@ -8,6 +8,7 @@ class CartProvider with ChangeNotifier {
   static const String _keyCart = 'shopping_cart';
   final Map<int, CartItem> _items = {};
   bool _isLoaded = false;
+  bool _isLoading = false;
 
   CartProvider({bool autoLoad = true}) {
     if (autoLoad) {
@@ -32,7 +33,11 @@ class CartProvider with ChangeNotifier {
   }
 
   /// Loads cart items from SharedPreferences on app launch.
-  Future<void> loadCart() async {
+  Future<void> loadCart({bool forceRefresh = false}) async {
+    if (_isLoading) return;
+    if (_isLoaded && !forceRefresh) return;
+
+    _isLoading = true;
     try {
       final prefs = await SharedPreferences.getInstance();
       final cartString = prefs.getString(_keyCart);
@@ -53,6 +58,7 @@ class CartProvider with ChangeNotifier {
       // In case of error/corrupted JSON, fallback to empty cart without crashing
       _items.clear();
     } finally {
+      _isLoading = false;
       _isLoaded = true;
       notifyListeners();
     }

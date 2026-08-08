@@ -25,7 +25,7 @@ class EcommerceApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
-        title: 'Fake Store',
+        title: 'BuyZone',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const AuthWrapper(),
@@ -60,8 +60,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final cartProvider = context.watch<CartProvider>();
 
-    if (!authProvider.isInitialized) {
+    if (!authProvider.isInitialized || !cartProvider.isLoaded) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: Colors.deepPurple),
